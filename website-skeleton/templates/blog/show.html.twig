@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+
+    <article>
+        <h2>{{ article.title }}</h2>
+        <div class="metadata">Writed at {{ article.createdAt | date('d/m/y') }} at
+            {{ article.createdAt | date('H:i') }} in category {{ article.category.title }}</div>
+        <div class="content"><img src="{{ article.image }}" alt="placeholder img">
+            <p>
+                {{ article.content | raw }}
+            </p>
+        </div>
+    </article>
+    <hr>
+    <h1>{{ article.comments | length }} Comments</h1>
+
+    {% for comment in article.comments %}
+        <section id="comments">
+            <div class="comment">
+                <div class="row">
+                    <div class="col-3">
+                        {{ comment.author }} (
+                        <small>{{ comment.createdAt | date('d/m/y at  H:i') }}</small>
+                        )
+                    </div>
+                    <div class="col">
+                        {{ comment.content | raw }}
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endfor %}
+
+        {% if app.user %}
+    {{ form_start(commentForm) }}
+    {{ form_widget(commentForm) }}
+    <button type="submit" class="btn btn-success">Save comment</button>
+    {{ form_end(commentForm) }}
+    {% else %}
+        <h2>You have to be logged in to commnt</h2>
+        <a href="{{ path('security_login') }}" class="btn btn-primary">Go to login</a>
+    {% endif %}
+{% endblock %}
