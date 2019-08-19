@@ -7,6 +7,8 @@ use App\Entity\Comment;
 use App\Form\ArticleType;
 use App\Form\CommentType;
 use App\Repository\ArticleRepository;
+use Knp\Component\Pager\Paginator;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Tests\Compiler\D;
 use Symfony\Component\Routing\Annotation\Route;
@@ -19,16 +21,25 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 
 class BlogController extends AbstractController
 {
-    /**
+
+     /**
      * @Route("/blog", name="blog")
      */
-    public function index(ArticleRepository $repository)
+    public function index(ArticleRepository $repository, ObjectManager $manager, Request $request,
+                        PaginatorInterface $paginator  )
     {
         $articles = $repository->findAll();
 
+
+        $result = $paginator->paginate(
+            $articles,
+            $request->query->getInt('page', 1),
+            5p
+        );
+
         return $this->render('blog/index.html.twig', [
             'controller_name' => 'BlogController',
-            'articles' => $articles
+            'articles' => $result
         ]);
     }
 
@@ -61,7 +72,7 @@ class BlogController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if(!$article->getId()){
+            if (!$article->getId()) {
                 $article->setCreatedAt(new \DateTime());
             }
             $manager->persist($article);
@@ -72,7 +83,7 @@ class BlogController extends AbstractController
 
         return $this->render('blog/create.html.twig', [
             'formArticle' => $form->createView(),
-            'editMode' => $article->getId() !==null
+            'editMode' => $article->getId() !== null
         ]);
     }
 
@@ -87,7 +98,7 @@ class BlogController extends AbstractController
 
         $form->handleRequest($request);
 
-        if($form->isSubmitted() && $form->isValid()){
+        if ($form->isSubmitted() && $form->isValid()) {
             $comment->setCreatedAt(new \DateTime());
             $comment->setArticle($article);
             $manager->persist($comment);
