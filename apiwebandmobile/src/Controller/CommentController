@@ -1,0 +1,117 @@
+<?php
+
+namespace App\Controller;
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use App\Model\PDOCommentModel;
+
+class CommentController extends Controller
+{
+    private $commentModel;
+
+    public function __construct(PDOCommentModel $commentModel)
+    {
+        $this->commentModel = $commentModel;
+    }
+
+    /**
+     * @Route("/messages/{id}/comments/", methods={"GET"}, name="getCommentsById")
+     * @param $id
+     * @return JsonResponse
+     */
+    public function getCommentsByMessageId($id)
+    {
+        $statusCode = 200;
+        $comments = [];
+
+        try {
+            $comments = $this->commentModel->findCommentsByMessageId($id);
+            if ($comments == null) {
+                $statusCode = 404;
+            }
+        } catch (\InvalidArgumentException $exception) {
+            $statusCode = 400;
+        } catch (\PDOException $exception) {
+            $statusCode = 500;
+        }
+        return new JsonResponse($comments, $statusCode);
+    }
+
+    /**
+     * @Route("/messages/{id}/comments/", methods={"POST"}, name="postCommentUnderMessage")
+     * @param $id
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function postCommentUnderMessage($id, Request $request)
+    {
+        $statusCode = 202;
+        $data = json_decode($request->getContent(), 1);
+        $content = $data['content'];
+        $username = $data['username'];
+        $token = "";
+
+        try {
+            $token = $this->commentModel->postCommentUnderMessage($content, $username, $id);
+            if ($token == null) {
+                $statusCode = 404;
+            }
+        } catch (\InvalidArgumentException $exception) {
+            $statusCode = 400;
+        } catch (\PDOException $exception) {
+            $statusCode = 500;
+        }
+        if($statusCode != 202){
+            return new JsonResponse($statusCode);
+        }
+        return new JsonResponse($token);
+    }
+
+    /**
+     * @Route("/messages/comments/", methods={"PUT"}, name="editCommentByToken")
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function editCommentByToken(Request $request)
+    {
+        $statusCode = 200;
+        $data = json_decode($request->getContent(), 1);
+        $content = $data['content'];
+        $token = $data['token'];
+
+        try {
+            $this->commentModel->editCommentByToken($content, $token);
+        } catch (\InvalidArgumentException $exception) {
+            $statusCode = 400;
+        } catch (\PDOException $exception) {
+            $statusCode = 500;
+        }
+        return new JsonResponse($statusCode);
+    }
+
+    /**
+     * @Route("/messages/comments/delete/", methods={"DELETE"}, name="deleteCommentByToken")
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCommentByToken(Request $request)
+    {
+        $statusCode = 202;
+        $data = json_decode($request->getContent(), 1);
+        $token = $data['token'];
+
+        try {
+            $this->commentModel->deleteCommentByToken($token);
+        } catch (\InvalidArgumentException $exception) {
+            $statusCode = 400;
+        } catch (\PDOException $exception) {
+            $statusCode = 500;
+        }
+
+        return new JsonResponse($statusCode);
+
+    }
+
+}
